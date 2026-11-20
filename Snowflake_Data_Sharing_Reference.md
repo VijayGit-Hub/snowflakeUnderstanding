@@ -97,3 +97,15 @@ CREATE MANAGED ACCOUNT client_reader_acct
 -- 2. Attach it just like any normal account
 ALTER SHARE CLIENT_VIEW_SHARE ADD ACCOUNTS = client_reader_acct;
 ```
+
+---
+
+## 5. Key Caveats & Rules (Copy-Paste One-Liners)
+
+| Rule | What It Means |
+|------|---------------|
+| **One-Database Boundary** | A single Share can only expose **one primary container database**. To combine data from multiple databases, create a **Secure View** in your primary shared database and grant `REFERENCE_USAGE` on the secondary databases to the share. |
+| **Why `SECURE` Views Are Mandatory** | Snowflake blocks standard views from shares because a consumer could inspect the underlying SQL definition or use query-optimization tricks to infer hidden rows/columns. The `SECURE` keyword hides your code and locks down data privacy. |
+| **No `FUTURE` Grants Allowed** | You cannot use `GRANT SELECT ON FUTURE TABLES` with a share. Every new or recreated object (`CREATE OR REPLACE`) must be **explicitly re-granted**, or consumers will lose access. |
+| **No Object Limits, Only Structural Limits** | There is **no cap** on the number of tables or views in a share, as long as they all live inside that single shared database (or are bridged via Secure Views). |
+| **Zero Consumer Storage, Compute Only** | Consumers pay **$0 for storage** on shared objects and only pay for the warehouse compute used to run `SELECT` queries — unless they're on a **Reader Account**, where **you (the provider)** pay for their compute. |
